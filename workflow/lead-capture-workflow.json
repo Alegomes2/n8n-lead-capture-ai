@@ -1,0 +1,965 @@
+{
+  "name": "Captação automatica de Leads",
+  "nodes": [
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "getAll",
+        "databaseId": {
+          "__rl": true,
+          "value": "YOUR_NOTION_DATABASE_ID",
+          "mode": "list",
+          "cachedResultName": "CRM notion",
+          "cachedResultUrl": ""
+        },
+        "filterType": "manual",
+        "filters": {
+          "conditions": [
+            {
+              "key": "Nome|title",
+              "condition": "equals",
+              "titleValue": "={{ $('Padronizar Dados do Lead').item.json.leadNome }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        1808,
+        192
+      ],
+      "id": "0ebc66b6-82f9-482d-a465-8b1dcd6aef00",
+      "name": "Get many database pages1",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "481ec687-2e97-482b-b76c-9695c6f07556",
+              "leftValue": "={{ $('Processar Leads Individualmente1').item.json.phone }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1504,
+        192
+      ],
+      "id": "1a550025-2980-4ecb-96f2-681ad6e2a1b0",
+      "name": "Tem telefone?"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.hasdata.com/scrape/google-maps/search",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "={{ $('Configuração da Busca').first().json.termoBusca + ' ' + $('Configuração da Busca').first().json.leadLocalizacao }}"
+            }
+          ]
+        },
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {}
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        -736,
+        -32
+      ],
+      "id": "24ec915a-0da1-4055-80d1-5c2515fb1c36",
+      "name": "HasData - Google Maps"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1440,
+        -32
+      ],
+      "id": "27060ec9-ea08-43b2-b072-b1a22cb2ef37",
+      "name": "01 - Iniciar Captação Manual"
+    },
+    {
+      "parameters": {
+        "content": "## Inicia manualmente o workflow de captação de leads.\n\nUsado para executar e testar a prospecção sob demanda.\n\nApós o início, o fluxo consulta empresas no Google Maps através da API do HasData.",
+        "height": 240,
+        "width": 320
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -1568,
+        -144
+      ],
+      "typeVersion": 1,
+      "id": "66800860-e33b-48fa-ab6b-f08ee95d7b8e",
+      "name": "Sticky Note"
+    },
+    {
+      "parameters": {
+        "content": "## Consulta a API Google Maps Search do HasData.\n\nBusca empresas de acordo com o nicho e a localização definidos no parâmetro \"q\".\n\nRetorna uma resposta contendo vários estabelecimentos dentro do array localResults.\n\nAutenticação realizada através do header x-api-key.",
+        "height": 256,
+        "width": 288,
+        "color": 2
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -832,
+        -192
+      ],
+      "typeVersion": 1,
+      "id": "f1048251-09ba-44fa-b0f9-588440232fca",
+      "name": "Sticky Note1"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "localResults",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        -416,
+        -32
+      ],
+      "id": "9bc70bbb-af3d-4ccf-b426-53ffa7825ad3",
+      "name": "Separar / Split Out"
+    },
+    {
+      "parameters": {
+        "content": "## Recebe o array localResults retornado pelo HasData e transforma cada estabelecimento em um item individual.\n\nExemplo:\n1 resposta com 20 empresas → 20 itens separados.\n\nIsso permite que cada lead seja processado individualmente nas próximas etapas.",
+        "height": 240,
+        "width": 288,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -512,
+        -176
+      ],
+      "typeVersion": 1,
+      "id": "7349ca01-91bc-4e87-aa53-f8035a7da5ef",
+      "name": "Sticky Note2"
+    },
+    {
+      "parameters": {
+        "content": "## Processa os leads individualmente.\n\nRecebe os estabelecimentos separados anteriormente e envia um lead por vez para as etapas de padronização, deduplicação, qualificação por IA e cadastro no CRM.\n\nApós finalizar um lead, o fluxo retorna para este nó e processa o próximo.",
+        "height": 240,
+        "width": 288,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        -192,
+        -176
+      ],
+      "typeVersion": 1,
+      "id": "e5269ea4-17f7-4a19-8aeb-ee834fab6691",
+      "name": "Sticky Note3"
+    },
+    {
+      "parameters": {
+        "content": "## Padroniza os dados recebidos do HasData.\n\nTransforma os campos da API em campos internos utilizados pelo restante do workflow, como:\n\nleadNome\nleadCategoria\nleadSite\nleadTelefone\nleadEndereco\nleadAvaliacao\nleadQtdAvaliacoes\nleadPlaceId\nleadGoogleMaps\nleadNicho\n\nEsta camada permite trocar a fonte de dados futuramente sem precisar reconstruir todo o workflow.",
+        "height": 240,
+        "width": 288,
+        "color": 5
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        128,
+        -176
+      ],
+      "typeVersion": 1,
+      "id": "88f5c3b5-2447-45c1-9503-425b0cfa5092",
+      "name": "Sticky Note4"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitInBatches",
+      "typeVersion": 3,
+      "position": [
+        -96,
+        -32
+      ],
+      "id": "fad58db0-b261-4ada-9950-5eec449eb618",
+      "name": "Processar Leads Individualmente1"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "10e373d7-6b46-4eb2-b7b7-5bf15dde9ab2",
+              "name": "leadNome",
+              "value": "={{ $json.title }}",
+              "type": "string"
+            },
+            {
+              "id": "a8377fd5-b9aa-4c19-9a4a-dd1521e51b8c",
+              "name": "leadCategoria",
+              "value": "={{ $json.type }}",
+              "type": "string"
+            },
+            {
+              "id": "7437bef1-e045-4644-8033-62a05f6713e4",
+              "name": "leadSite",
+              "value": "={{ $json.website }}",
+              "type": "string"
+            },
+            {
+              "id": "af74f65b-0784-4ce7-a8e6-c2b01005a176",
+              "name": "leadTelefone",
+              "value": "={{ $json.phone }}",
+              "type": "string"
+            },
+            {
+              "id": "8ce691c4-f8fb-4ebd-9547-2bb97d611fbc",
+              "name": "leadEndereco",
+              "value": "={{ $json.address }}",
+              "type": "string"
+            },
+            {
+              "id": "258a7ad5-f731-4a60-bb80-ffc80ffce288",
+              "name": "leadAvaliacao",
+              "value": "={{ $json.rating }}",
+              "type": "string"
+            },
+            {
+              "id": "96165c88-cecc-4c9c-8ec5-d0c45fa54db3",
+              "name": "leadQtdAvaliacoes",
+              "value": "={{ $json.reviews }}",
+              "type": "string"
+            },
+            {
+              "id": "5f60c0ba-1ccc-4dd6-b001-9e59b511a3f2",
+              "name": "leadPlaceId",
+              "value": "={{ $json.placeId || '' }}",
+              "type": "string"
+            },
+            {
+              "id": "cee17617-ea4e-428f-83ff-9a31e0cb28a8",
+              "name": "leadGoogleMaps",
+              "value": "={{ $json.placeId ? 'https://www.google.com/maps/search/?api=1&query_place_id=' + $json.placeId : '' }}",
+              "type": "string"
+            },
+            {
+              "id": "526df2ae-9659-48b8-9f68-5f3e28f3c72f",
+              "name": "leadNicho",
+              "value": "={{ $('Configuração da Busca').first().json.leadNicho }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        224,
+        -32
+      ],
+      "id": "27a6a186-6b50-4cfb-bd14-c8a147d143de",
+      "name": "Padronizar Dados do Lead"
+    },
+    {
+      "parameters": {
+        "content": "##Verifica se o estabelecimento possui Google Place ID.\n\nQuando existe Place ID, ele é usado como primeira opção de deduplicação por ser um identificador específico do estabelecimento no Google Maps.\n\nSe não existir, o fluxo segue para métodos alternativos de deduplicação.",
+        "height": 240,
+        "width": 288,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        448,
+        -176
+      ],
+      "typeVersion": 1,
+      "id": "6356661a-3564-42e7-9648-ff0a9a061783",
+      "name": "Sticky Note5"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "531bf10a-d5f5-4f13-aec0-1f37a8c4086f",
+              "leftValue": "={{ $('Processar Leads Individualmente1').item.json.placeId }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        544,
+        -32
+      ],
+      "id": "95a1ba52-d5ca-4b83-a603-b815f148ef10",
+      "name": "Possui Google Place ID?"
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "getAll",
+        "databaseId": {
+          "__rl": true,
+          "value": "YOUR_NOTION_DATABASE_ID",
+          "mode": "list",
+          "cachedResultName": "CRM notion",
+          "cachedResultUrl": ""
+        },
+        "filterType": "manual",
+        "filters": {
+          "conditions": [
+            {
+              "key": "Google Place ID|rich_text",
+              "condition": "equals",
+              "richTextValue": "={{ $('Padronizar Dados do Lead').item.json.leadPlaceId }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        864,
+        -80
+      ],
+      "id": "2e51b1e0-9d24-4d51-9cd5-aa3302b62cf1",
+      "name": "Buscar Lead por Place ID",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "content": "## Consulta o CRM no Notion procurando um registro com o mesmo Google Place ID do lead atual.\n\nObjetivo:\nevitar cadastrar novamente uma empresa que já existe no CRM.\n\nO nó está configurado para continuar o fluxo mesmo quando nenhum registro for encontrado.",
+        "height": 240,
+        "width": 288,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        768,
+        -176
+      ],
+      "typeVersion": 1,
+      "id": "04dc85c2-73fe-4b99-851b-b35a5dab25fa",
+      "name": "Sticky Note6"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "962674d9-9639-4286-b335-66a94e5ca277",
+              "leftValue": "={{ Object.keys($json).length }}",
+              "rightValue": 0,
+              "operator": {
+                "type": "number",
+                "operation": "gt"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        1200,
+        -48
+      ],
+      "id": "cd5bf699-81ac-4813-a321-089b77fc71d4",
+      "name": "Lead Encontrado por Place ID?",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "content": "##Analisa o resultado da busca por Google Place ID.\n\nSe o lead já existir:\nnão cria um novo registro e retorna para o loop para processar o próximo estabelecimento.\n\nSe não existir:\ncontinua para as verificações adicionais por telefone ou nome.",
+        "height": 240,
+        "width": 288,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1088,
+        -176
+      ],
+      "typeVersion": 1,
+      "id": "098fd4a6-7011-4521-bd7e-409a1456830f",
+      "name": "Sticky Note7"
+    },
+    {
+      "parameters": {
+        "content": "## Verifica se o lead possui número de telefone.\n\nSe possuir:\no telefone será usado como segunda forma de deduplicação.\n\nSe não possuir:\no fluxo utiliza o nome do estabelecimento como alternativa.",
+        "height": 240,
+        "width": 288,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1408,
+        112
+      ],
+      "typeVersion": 1,
+      "id": "7a066910-1b7d-4a1e-b306-0d017aae7f15",
+      "name": "Sticky Note8"
+    },
+    {
+      "parameters": {
+        "content": "## Consulta o CRM no Notion procurando um estabelecimento com o mesmo nome.\n\nÉ utilizado como método alternativo de deduplicação quando o lead não possui telefone.\n\nAjuda a impedir registros duplicados mesmo quando alguns dados do Google Maps estão incompletos.",
+        "height": 240,
+        "width": 304,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        1728,
+        -176
+      ],
+      "typeVersion": 1,
+      "id": "47469962-7dee-443f-a3e8-325973340eea",
+      "name": "Sticky Note9"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "2a4bcf4e-d484-4c71-a378-c57748ada32c",
+              "leftValue": "={{ $json.id }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "exists",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2176,
+        -32
+      ],
+      "id": "00e16a8d-bff7-483c-9999-a0d862e025b9",
+      "name": "Lead Já Existe?"
+    },
+    {
+      "parameters": {
+        "content": "## Analisa o resultado das buscas alternativas de deduplicação.\n\nSe encontrou um registro:\no lead é considerado duplicado e retorna para o loop sem ser criado novamente.\n\nSe não encontrou:\no lead é considerado novo e segue para qualificação com IA.",
+        "height": 240,
+        "width": 320,
+        "color": 3
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        2064,
+        -176
+      ],
+      "typeVersion": 1,
+      "id": "0984e91d-8487-45c5-b830-1f74321b6203",
+      "name": "Sticky Note10"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Você é um assistente de qualificação de leads para uma empresa que vende sites, sistemas de agendamento, automações e soluções com IA para pequenos negócios.\n\nAnalise este estabelecimento:\n\nNome: {{ $('Padronizar Dados do Lead').item.json.leadNome }}\nCategoria:{{ $('Padronizar Dados do Lead').item.json.leadCategoria }}\nSite: {{ $('Padronizar Dados do Lead').item.json.leadSite }}\nTelefone: {{ $('Padronizar Dados do Lead').item.json.leadTelefone }}\nEndereço: {{ $('Padronizar Dados do Lead').item.json.leadEndereco }}\nAvaliação Google: {{ $('Padronizar Dados do Lead').item.json.leadAvaliacao }}\nQuantidade de avaliações: {{ $('Padronizar Dados do Lead').item.json.leadQtdAvaliacoes }}\n\nClassifique o lead usando SOMENTE estas opções:\n\nPrioridade: Alta, Média ou Baixa\n\nOportunidade: Site, Agendamento, Automação ou IA\n\nNa análise, explique em no máximo 2 frases por que essa oportunidade foi escolhida.\n\nResponda EXATAMENTE neste formato, sem markdown e sem texto adicional:\n\nPRIORIDADE: Alta\nOPORTUNIDADE: Agendamento\nANALISE: texto da análise",
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        2464,
+        -32
+      ],
+      "id": "649188c8-4d92-4f0b-9f0f-fc4ccabdc242",
+      "name": "Qualificar Lead com IA"
+    },
+    {
+      "parameters": {
+        "content": "## Analisa o estabelecimento utilizando IA antes de cadastrá-lo no CRM.\n\nA IA recebe informações como:\nnome\ncategoria\nsite\ntelefone\nendereço\navaliação\nquantidade de avaliações\nnicho\n\nRetorna:\n\nPRIORIDADE:\nAlta, Média ou Baixa.\n\nOPORTUNIDADE:\nSite, Agendamento, Automação ou IA.\n\nANÁLISE:\njustificativa curta explicando a oportunidade identificada.\n\nO resultado é utilizado para facilitar a priorização dos leads durante a prospecção.",
+        "height": 240,
+        "width": 320,
+        "color": 4
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        2416,
+        -176
+      ],
+      "typeVersion": 1,
+      "id": "415c940e-c495-4f85-ba32-46beff67808c",
+      "name": "Sticky Note11"
+    },
+    {
+      "parameters": {
+        "model": "openai/gpt-oss-20b",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGroq",
+      "typeVersion": 1,
+      "position": [
+        2352,
+        336
+      ],
+      "id": "ba0fd3f9-bfc3-4977-a893-a00bcbee6b44",
+      "name": "Modelo IA - Groq"
+    },
+    {
+      "parameters": {
+        "content": "## Modelo de linguagem utilizado pela etapa de qualificação dos leads.\n\nFornece o modelo de IA para a cadeia \"Qualificar Lead com IA\".\n\nA análise é utilizada apenas para classificação e apoio à prospecção. O cadastro final é realizado pelo nó do Notion.",
+        "height": 240,
+        "width": 320
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        2240,
+        176
+      ],
+      "typeVersion": 1,
+      "id": "c85d29b5-98d3-485b-8170-cab70ea540f0",
+      "name": "Sticky Note12"
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "databaseId": {
+          "__rl": true,
+          "value": "YOUR_NOTION_DATABASE_ID",
+          "mode": "list",
+          "cachedResultName": "CRM notion",
+          "cachedResultUrl": ""
+        },
+        "title": "={{ $('Padronizar Dados do Lead').item.json.leadNome }}",
+        "propertiesUi": {
+          "propertyValues": [
+            {
+              "key": "Nicho|select",
+              "selectValue": "={{ $('Padronizar Dados do Lead').first().json.leadNicho }}"
+            },
+            {
+              "key": "Status|status",
+              "statusValue": "={{ \"Novo\" }}"
+            },
+            {
+              "key": "Site|url",
+              "ignoreIfEmpty": true,
+              "urlValue": "={{ $('Padronizar Dados do Lead').item.json.leadSite || '' }}"
+            },
+            {
+              "key": "Cidade/Bairro|rich_text",
+              "textContent": "={{ $('Processar Leads Individualmente1').item.json.address }}"
+            },
+            {
+              "key": "Telefone|phone_number",
+              "phoneValue": "={{ $('Padronizar Dados do Lead').item.json.leadTelefone }}"
+            },
+            {
+              "key": "Avaliações Google|rich_text",
+              "textContent": "={{ $('Padronizar Dados do Lead').item.json.leadAvaliacao ? '⭐ ' + $('Padronizar Dados do Lead').item.json.leadAvaliacao + ' — ' + $('Padronizar Dados do Lead').item.json.leadQtdAvaliacoes + ' avaliações' : '' }}"
+            },
+            {
+              "key": "Google Maps|url",
+              "ignoreIfEmpty": true,
+              "urlValue": "={{ $('Padronizar Dados do Lead').item.json.leadGoogleMaps }}"
+            },
+            {
+              "key": "Google Place ID|rich_text",
+              "textContent": "={{ $('Padronizar Dados do Lead').item.json.leadPlaceId }}"
+            },
+            {
+              "key": "Prioridade|multi_select",
+              "multiSelectValue": "={{ $json.text.match(/PRIORIDADE:\\s*(.+)/)?.[1]?.trim() || '' }}"
+            },
+            {
+              "key": "Oportunidade|multi_select",
+              "multiSelectValue": "={{ $json.text.match(/OPORTUNIDADE:\\s*(.+)/)?.[1]?.trim() || '' }}"
+            },
+            {
+              "key": "Analise IA|rich_text",
+              "textContent": "={{ $json.text.match(/ANALISE:\\s*([\\s\\S]+)/)?.[1]?.trim() || '' }}"
+            }
+          ]
+        },
+        "blockUi": {
+          "blockValues": [
+            {}
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        2880,
+        -32
+      ],
+      "id": "a2be4a2e-92b6-4f20-8574-a17c7a9f8d07",
+      "name": "Criar Lead no CRM"
+    },
+    {
+      "parameters": {
+        "content": "## Cria o lead qualificado no CRM do Notion.\n\nRegistra os dados coletados do Google Maps e o resultado da análise da IA, incluindo:\n\nNome\nTelefone\nSite\nEndereço\nNicho\nGoogle Place ID\nGoogle Maps\nAvaliação\nPrioridade\nOportunidade\nAnálise IA\n\nApós a criação, o fluxo retorna ao loop para processar o próximo lead.",
+        "height": 240,
+        "width": 320,
+        "color": 6
+      },
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [
+        2768,
+        -176
+      ],
+      "typeVersion": 1,
+      "id": "d843933d-9605-45c3-82f0-b97fb44fa9ac",
+      "name": "Sticky Note13"
+    },
+    {
+      "parameters": {
+        "resource": "databasePage",
+        "operation": "getAll",
+        "databaseId": {
+          "__rl": true,
+          "value": "YOUR_NOTION_DATABASE_ID",
+          "mode": "list",
+          "cachedResultName": "CRM notion",
+          "cachedResultUrl": ""
+        },
+        "filterType": "manual",
+        "filters": {
+          "conditions": [
+            {
+              "key": "Telefone|phone_number",
+              "condition": "equals",
+              "phoneNumberValue": "={{ $('Padronizar Dados do Lead').item.json.leadTelefone }}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.notion",
+      "typeVersion": 2.2,
+      "position": [
+        1840,
+        -32
+      ],
+      "id": "18b45bb8-9ab4-4bdf-afac-5aef752eabde",
+      "name": "Buscar Lead por Telefone",
+      "alwaysOutputData": true
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "551cee07-f22a-4118-bd86-fefca4227ef2",
+              "name": "leadNicho",
+              "value": "Barbearia",
+              "type": "string"
+            },
+            {
+              "id": "6e289dc4-8f3b-41d4-b152-6f0805081eeb",
+              "name": "termoBusca",
+              "value": "barbearia",
+              "type": "string"
+            },
+            {
+              "id": "86348787-077d-43b3-bdd6-d40f2592907e",
+              "name": "leadLocalizacao",
+              "value": "",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -1088,
+        -32
+      ],
+      "id": "a7396f8b-534c-43f1-aea1-3b0cfc7e4643",
+      "name": "Configuração da Busca"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Get many database pages1": {
+      "main": [
+        [
+          {
+            "node": "Lead Já Existe?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tem telefone?": {
+      "main": [
+        [
+          {
+            "node": "Buscar Lead por Telefone",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get many database pages1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HasData - Google Maps": {
+      "main": [
+        [
+          {
+            "node": "Separar / Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "01 - Iniciar Captação Manual": {
+      "main": [
+        [
+          {
+            "node": "Configuração da Busca",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Separar / Split Out": {
+      "main": [
+        [
+          {
+            "node": "Processar Leads Individualmente1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Processar Leads Individualmente1": {
+      "main": [
+        [],
+        [
+          {
+            "node": "Padronizar Dados do Lead",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Padronizar Dados do Lead": {
+      "main": [
+        [
+          {
+            "node": "Possui Google Place ID?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Possui Google Place ID?": {
+      "main": [
+        [
+          {
+            "node": "Buscar Lead por Place ID",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Tem telefone?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Lead por Place ID": {
+      "main": [
+        [
+          {
+            "node": "Lead Encontrado por Place ID?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lead Encontrado por Place ID?": {
+      "main": [
+        [
+          {
+            "node": "Processar Leads Individualmente1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Tem telefone?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lead Já Existe?": {
+      "main": [
+        [
+          {
+            "node": "Processar Leads Individualmente1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Qualificar Lead com IA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Qualificar Lead com IA": {
+      "main": [
+        [
+          {
+            "node": "Criar Lead no CRM",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Modelo IA - Groq": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Qualificar Lead com IA",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Criar Lead no CRM": {
+      "main": [
+        [
+          {
+            "node": "Processar Leads Individualmente1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Buscar Lead por Telefone": {
+      "main": [
+        [
+          {
+            "node": "Lead Já Existe?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Configuração da Busca": {
+      "main": [
+        [
+          {
+            "node": "HasData - Google Maps",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "tags": []
+}

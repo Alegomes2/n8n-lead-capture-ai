@@ -1,0 +1,19 @@
+
+# Credenciais e variáveis de ambiente
+.env
+.env.*
+!.env.example
+credentials.json
+secrets.json
+*.pem
+*.key
+
+# Arquivos do sistema
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Backups e arquivos temporários
+*.bak
+*.tmp
+*.log
